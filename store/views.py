@@ -3,6 +3,7 @@ from django.http import JsonResponse
 import json
 import datetime
 from .models import *
+#from .utils import cookieCart, cartData, guestOrder
 # Create your views here.
 
 def main(request):
@@ -11,7 +12,6 @@ def main(request):
  
 def store(request):
     #data = cartData(request)
-
     # cartItems = data['cartItems']
     # order = data['order']
     # items = data['items']
@@ -50,9 +50,23 @@ def cart(request):
         items = order.orderitem_set.all()
         cartItems = order.get_cart_items
     else:
+        try:
+            cart= json.loads(request.COOKIES['cart'])
+        except:
+            cart = {}
+        print('Cart', cart)
+        print("i am here")
         items = []
-        order = {'get_cart_total':0, 'get_cart_items':0}
+        order = {'get_cart_total':0, 'get_cart_items':0, 'shipping':False}
         cartItems = order['get_cart_items']
+
+        for i in cart:
+            cartItems += cart[i]["quantity"]
+             
+            product = Product.objects.get(id=i)
+            total = (product.price * cart[i]['quantity'])
+            order['get_cart_total'] += total
+            order['get_cart_items'] += cart[i]['quantity']
 
     context = {'items':items, 'order':order, 'cartItems':cartItems}
     return render(request, 'store/cart.html', context)
